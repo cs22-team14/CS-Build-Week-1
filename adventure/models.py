@@ -143,7 +143,7 @@ class World(models.Model):
                 walk(xx, yy)
 
         walk(random.randrange(w), random.randrange(h))
-        maze = self.add_rooms(maze, width, height)
+        # maze = self.add_rooms(maze, width, height)
           
         return maze
   
