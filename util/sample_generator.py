@@ -4,10 +4,7 @@
 # You can modify generate_rooms() to create your own
 # procedural generation algorithm and use print_rooms()
 # to see the world.
-import random
 
-TILE_EMPTY = ' '
-TILE_CRATE = '#'
 
 class Room:
     def __init__(self, id, name, description, x, y):
@@ -21,9 +18,9 @@ class Room:
         self.x = x
         self.y = y
     def __repr__(self):
-        return str(self.name)
-
-      
+        if self.e_to is not None:
+            return f"({self.x}, {self.y}) -> ({self.e_to.x}, {self.e_to.y})"
+        return f"({self.x}, {self.y})"
     def connect_rooms(self, connecting_room, direction):
         '''
         Connect two rooms in the given n/s/e/w direction
@@ -32,168 +29,134 @@ class Room:
         reverse_dir = reverse_dirs[direction]
         setattr(self, f"{direction}_to", connecting_room)
         setattr(connecting_room, f"{reverse_dir}_to", self)
-
-
     def get_room_in_direction(self, direction):
         '''
         Connect two rooms in the given n/s/e/w direction
         '''
         return getattr(self, f"{direction}_to")
 
-      
-    def get_possible_directions(self):
-      dir_list = {'north': self.n_to, 'south': self.s_to, 
-                  'east': self.e_to, 'west': self.w_to}
-      
-      available_dirs = []
-      for direction, value in dir_list.items():
-        if value is not None:
-          available_dirs.append(direction)
-          
-      if len(available_dirs) == 1:
-        return f'There is a path to the {available_dirs[0]} of you.'
-      else:
-        possible_directions = 'There are paths to the '
-        
-      for i, direction in enumerate(available_dirs):
-        possible_directions += direction + ', '
-      possible_directions = possible_directions.rstrip(', ') + ' of you.'
-      
-      x = possible_directions.rfind(',')
-      possible_directions = possible_directions[:x+1] + ' and'+ possible_directions[x+1:]
-      return possible_directions
-
 
 class World:
     def __init__(self):
-        # self.grid = None
+        self.grid = None
         self.width = 0
         self.height = 0
-    
+    def generate_rooms(self, size_x, size_y, num_rooms):
+        '''
+        Fill up the grid, bottom to top, in a zig-zag pattern
+        '''
 
-    def create_grid(self, width, height):
-        grid = []
-        for row in range(height):
-            grid.append([])
-            for column in range(width):
-                if (column % 2 == 1) and (row % 2 == 1): # Room at 4 corners
-                    grid[row].append(TILE_EMPTY)
-                elif column == 0 or row == 0 or column == width - 1 or row == height - 1:
-                    grid[row].append(TILE_CRATE)
-                else:
-                    grid[row].append(TILE_CRATE)
-        return grid
+        # Initialize the grid
+        self.grid = [None] * size_y
+        self.width = size_x
+        self.height = size_y
+        for i in range( len(self.grid) ):
+            self.grid[i] = [None] * size_x
 
-
-    def get_corners(self, height, width):
-        size = random.randint(3, 6)
-  
-        x_start = random.randint(1, width-3)
-        x_end = x_start+size
-        if x_end >= width:
-            x_end = x_start
-    
-        y_start = random.randint(1, height-3)
-        y_end = y_start+size
-        if y_end >= height:
-            y_end = y_start
-  
-        return x_start, y_start, x_end, y_end
-
-
-    def add_rooms(self, maze, width, height):
-        large_rooms = random.randint(1,min(width, height)//3)
-  
-        for _ in range(large_rooms):
-            x_start, y_start, x_end, y_end = self.get_corners(height, width)
-            for i in range(y_start, y_end):
-                for j in range(x_start, x_end):
-                    maze[i][j] = TILE_EMPTY
-        return maze
-
-
-    def make_maze(self, width, height):
-        if ((width*height) > (75**2)) or (width <= 3) or (height <= 3):
-            return None
-        if width % 2 == 0:
-            width += 1
-        if height % 2 == 0:
-            height += 1
-      
-        maze = self.create_grid(width, height)
-
-        w = (len(maze[0]) - 1) // 2
-        h = (len(maze) - 1) // 2
-        vis = [[0] * w + [1] for _ in range(h)] + [[1] * (w + 1)]
-
-        def walk(x, y):
-            vis[y][x] = 1
-
-            d = [(x - 1, y), (x, y + 1), (x + 1, y), (x, y - 1)]
-            random.shuffle(d)
-            for (xx, yy) in d:
-                if vis[yy][xx]:
-                    continue
-                if xx == x:
-                    maze[max(y, yy) * 2][x * 2 + 1] = TILE_EMPTY
-                if yy == y:
-                    maze[y * 2 + 1][max(x, xx) * 2] = TILE_EMPTY
-
-                walk(xx, yy)
-
-        walk(random.randrange(w), random.randrange(h))
-        maze = self.add_rooms(maze, width, height)
-          
-        return maze
-  
-    def print_maze(self, maze):
-        temp = ''
-        for row in maze:
-            for space in row:
-                temp += space
-            temp+='\n'
-        print(temp)
-
-    def create_dungeon(self, maze):
-        grid = [None] * len(maze)
-        for i in range(len(grid)):
-            grid[i] = [None] * len(maze[0])
+        # Start from lower-left corner (0,0)
+        x = -1 # (this will become 0 on the first step)
+        y = 0
         room_count = 0
-        count = 0
 
-        for Y, row in enumerate(maze):
-            for X, room in enumerate(row):
-                if room == '#':
-                    grid[Y][X] = Room(id=room_count, name='Wall', description='A wholly unremarkable wall', x=X, y=Y)
+        # Start generating rooms to the east
+        direction = 1  # 1: east, -1: west
+
+
+        # While there are rooms to be created...
+        previous_room = None
+        while room_count < num_rooms:
+
+            # Calculate the direction of the room to be created
+            if direction > 0 and x < size_x - 1:
+                room_direction = "e"
+                x += 1
+            elif direction < 0 and x > 0:
+                room_direction = "w"
+                x -= 1
+            else:
+                # If we hit a wall, turn north and reverse direction
+                room_direction = "n"
+                y += 1
+                direction *= -1
+
+            # Create a room in the given direction
+            room = Room(room_count, "A Generic Room", "This is a generic room.", x, y)
+            # Note that in Django, you'll need to save the room after you create it
+
+            # Save the room in the World grid
+            self.grid[y][x] = room
+
+            # Connect the new room to the previous room
+            if previous_room is not None:
+                previous_room.connect_rooms(room, room_direction)
+
+            # Update iteration variables
+            previous_room = room
+            room_count += 1
+
+
+
+    def print_rooms(self):
+        '''
+        Print the rooms in room_grid in ascii characters.
+        '''
+
+        # Add top border
+        str = "# " * ((3 + self.width * 5) // 2) + "\n"
+
+        # The console prints top to bottom but our array is arranged
+        # bottom to top.
+        #
+        # We reverse it so it draws in the right direction.
+        reverse_grid = list(self.grid) # make a copy of the list
+        reverse_grid.reverse()
+        for row in reverse_grid:
+            # PRINT NORTH CONNECTION ROW
+            str += "#"
+            for room in row:
+                if room is not None and room.n_to is not None:
+                    str += "  |  "
                 else:
-                    grid[Y][X] = Room(id=room_count, name='Room', description='Another empty room', x=X, y=Y)
-                    count += 1
-                room_count += 1
-      
-        print('Number of Traversable Rooms: ', count)
-        return grid
+                    str += "     "
+            str += "#\n"
+            # PRINT ROOM ROW
+            str += "#"
+            for room in row:
+                if room is not None and room.w_to is not None:
+                    str += "-"
+                else:
+                    str += " "
+                if room is not None:
+                    str += f"{room.id}".zfill(3)
+                else:
+                    str += "   "
+                if room is not None and room.e_to is not None:
+                    str += "-"
+                else:
+                    str += " "
+            str += "#\n"
+            # PRINT SOUTH CONNECTION ROW
+            str += "#"
+            for room in row:
+                if room is not None and room.s_to is not None:
+                    str += "  |  "
+                else:
+                    str += "     "
+            str += "#\n"
 
-    def connect_paths(self, grid):
-        X = len(grid[0])
-        Y = len(grid)
-  
-        for Y, row in enumerate(grid):
-            for X, room in enumerate(row):
-                if room.name != 'Wall':
-                    if (Y > 0) and grid[Y-1][X].name != 'Wall':
-                        room.connect_rooms(grid[Y-1][X], 'n')
-                    if (X > 0) and grid[Y][X-1].name != 'Wall':
-                        room.connect_rooms(grid[Y][X-1], 'w')
-        return grid
+        # Add bottom border
+        str += "# " * ((3 + self.width * 5) // 2) + "\n"
+
+        # Print string
+        print(str)
+
 
 w = World()
-width = 20
-height = 20
-
-maze = w.make_maze(width, height)
-if maze:
-    w.print_maze(maze)
-    dungeon = w.connect_paths(w.create_dungeon(maze))  ## func to return a dungeon?
+num_rooms = 44
+width = 8
+height = 7
+w.generate_rooms(width, height, num_rooms)
+w.print_rooms()
 
 
-# print(f"\n\nWorld\n  height: {height}\n  width: {width},\n  num_rooms: {num_rooms}\n")
+print(f"\n\nWorld\n  height: {height}\n  width: {width},\n  num_rooms: {num_rooms}\n")

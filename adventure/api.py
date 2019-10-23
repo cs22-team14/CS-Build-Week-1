@@ -22,31 +22,7 @@ def initialize(request):
     players = room.playerNames(player_id)
     return JsonResponse({'uuid': uuid, 'name':player.user.username, 'title':room.title, 'description':room.description, 'players':players}, safe=True)
 
-@api_view(["GET"])
-def getRooms(request):
-    world = World()
-    response = world.make_connected_dungeon()
-    rooms = []
-    for i in response:
-        for k in i:
-            if k.n_to == None:
-                n = -1
-            else:
-                n = k.n_to.id
-            if k.s_to == None:
-                s = -1
-            else:
-                s = k.s_to.id
-            if k.e_to == None:
-                e = -1
-            else:
-                e =k.e_to.id
-            if k.w_to == None:
-                w = -1
-            else:
-                w = k.w_to.id
-            rooms.append({'name': k.name, 'id': k.id, 'description': k.description, 'x': k.x, 'y': k.y, 'n': n, 's': s, 'e': e, 'w': w})
-    return JsonResponse({"rooms": rooms})
+
 # @csrf_exempt
 @api_view(["POST"])
 def move(request):
