@@ -7,6 +7,7 @@ from django.contrib.auth.models import User
 from .models import *
 from rest_framework.decorators import api_view
 import json
+from .dungeon_maker import Dungeon
 
 # instantiate pusher
 # pusher = Pusher(app_id=config('PUSHER_APP_ID'), key=config('PUSHER_KEY'), secret=config('PUSHER_SECRET'), cluster=config('PUSHER_CLUSTER'))
@@ -65,3 +66,21 @@ def move(request):
 def say(request):
     # IMPLEMENT
     return JsonResponse({'error':"Not yet implemented"}, safe=True, status=500)
+
+
+@api_view(["GET"])
+def make_dungeon(request):
+    try:
+        Room.objects.all().delete()
+    except:
+        pass
+
+    d = Dungeon(11,11)
+    d.generate_dungeon()
+
+    players=Player.objects.all()
+    for p in players:
+        p.currentRoom=1
+        p.save()
+    
+    return JsonResponse({"rooms": list(Room.objects.values())})
