@@ -78,6 +78,7 @@ class Dungeon():
     value = random.choice(move_options[axis])
     return axis, value
 
+
   def create_tracker(self):
     self.tracker = self.make_grid()
 
@@ -98,6 +99,7 @@ class Dungeon():
           cur_pos_y += value
         self.tracker[cur_pos_y][cur_pos_x] = count + 1
 
+
   def create_rooms(self):
     self.dungeon = self.make_grid()
 
@@ -106,6 +108,7 @@ class Dungeon():
         self.dungeon[y][x] = Room(title='Room', description='Another empty room')
         self.dungeon[y][x].save()
   
+
   def link_rooms(self):
     for y in range(self.y):
       for x in range(self.x):
