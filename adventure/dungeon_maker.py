@@ -61,9 +61,9 @@ class Dungeon():
         return 'e'
     else:
       if value == 1:
-        return 's'
-      else:
         return 'n'
+      else:
+        return 's'
       
       
   def get_new_move(self, move_options):
@@ -78,31 +78,12 @@ class Dungeon():
     value = random.choice(move_options[axis])
     return axis, value
 
-
-  def create_and_link_rooms(self, x, y, axis, value):
-    if axis == 'x':
-      x_val, y_val = value, 0
-    else:
-      x_val, y_val = 0, value
-
-    direction = self.get_direction(axis, value)
-    self.dungeon[y][x] = Room(title='Room', description='Another empty room')
-    self.dungeon[y][x].save()
-    self.dungeon[y][x].connectRooms(self.dungeon[y-y_val][x-x_val], direction)
-    direction = self.get_direction(axis, -value)
-    self.dungeon[y-y_val][x-x_val].connectRooms(self.dungeon[y][x], direction)
-  
-
-  def generate_dungeon(self):
+  def create_tracker(self):
     self.tracker = self.make_grid()
-    self.dungeon = self.make_grid()
 
-    no_new_choice = dic = {'x': [], 'y': []}
+    no_new_choice = {'x': [], 'y': []}
     cur_pos_x, cur_pos_y = 0, 0
     self.tracker[cur_pos_y][cur_pos_x] = 0
-    
-    self.dungeon[cur_pos_y][cur_pos_x] = Room(title='Room', description='The start of your journey.')
-    self.dungeon[cur_pos_y][cur_pos_x].save()
     
     while self.contains_none():
       move_options = self.get_unvisited_options(cur_pos_x, cur_pos_y)
@@ -113,12 +94,38 @@ class Dungeon():
         count = self.tracker[cur_pos_y][cur_pos_x]
         if axis == 'x':
           cur_pos_x += value
-          self.create_and_link_rooms(cur_pos_x, cur_pos_y, axis, value)
         else:
           cur_pos_y += value
-          self.create_and_link_rooms(cur_pos_x, cur_pos_y, axis, value)
         self.tracker[cur_pos_y][cur_pos_x] = count + 1
 
+  def create_rooms(self):
+    self.dungeon = self.make_grid()
+
+    for y in range(self.y):
+      for x in range(self.x):
+        self.dungeon[y][x] = Room(title='Room', description='Another empty room')
+        self.dungeon[y][x].save()
+  
+  def link_rooms(self):
+    for y in range(self.y):
+      for x in range(self.x):
+        if (x+1 < self.x) and (self.tracker[y][x+1] == (self.tracker[y][x] + 1)):
+          self.dungeon[y][x].connectRooms(self.dungeon[y][x+1], 'e')
+          self.dungeon[y][x+1].connectRooms(self.dungeon[y][x], 'w')
+        elif (x-1 >= 0) and (self.tracker[y][x-1] == (self.tracker[y][x] + 1)):
+          self.dungeon[y][x].connectRooms(self.dungeon[y][x-1], 'w')
+          self.dungeon[y][x-1].connectRooms(self.dungeon[y][x], 'e')
+        elif (y+1 < self.y) and (self.tracker[y+1][x] == (self.tracker[y][x] + 1)):
+          self.dungeon[y][x].connectRooms(self.dungeon[y+1][x], 's')
+          self.dungeon[y+1][x].connectRooms(self.dungeon[y][x], 'n')
+        elif (y-1 >= 0) and (self.tracker[y-1][x] == (self.tracker[y][x] + 1)):
+          self.dungeon[y][x].connectRooms(self.dungeon[y-1][x], 'n')
+          self.dungeon[y-1][x].connectRooms(self.dungeon[y][x], 's')
+
+  def generate_dungeon(self):
+    self.create_tracker()
+    self.create_rooms()
+    self.link_rooms()
 
   def get_dungeon(self):
     return self.dungeon
