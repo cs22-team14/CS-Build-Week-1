@@ -90,6 +90,6 @@ def make_dungeon(request):
 def set_players(request):
     players=Player.objects.all()
     for p in players:
-        p.currentRoom=264
+        p.currentRoom=385
         p.save()
     return JsonResponse({"Complete":"Complete"})
