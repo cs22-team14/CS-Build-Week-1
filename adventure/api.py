@@ -72,7 +72,7 @@ def say(request):
 
 @api_view(["GET"])
 def get_rooms(request):
-    return JsonResponse({"rooms": list(Room.objects.values())})
+    return JsonResponse({"rooms": list(Room.objects.values().order_by('id'))})
 
 @api_view(["GET"])
 def make_dungeon(request):
@@ -84,12 +84,12 @@ def make_dungeon(request):
     d = Dungeon(11,11)
     d.generate_dungeon()
     
-    return JsonResponse({"rooms": list(Room.objects.values().order_by('id'))})
+    return JsonResponse({"rooms": list(Room.objects.values())})
 
 @api_view(['GET'])
 def set_players(request):
     players=Player.objects.all()
     for p in players:
-        p.currentRoom=385
+        p.currentRoom=1100
         p.save()
     return JsonResponse({"Complete":"Complete"})
