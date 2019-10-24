@@ -130,7 +130,6 @@ class Dungeon():
   def get_dungeon(self):
     return self.dungeon
   
-  
   def visualize_dungeon(self):
     for y in range(self.y):
       row = ''
