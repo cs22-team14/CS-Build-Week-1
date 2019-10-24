@@ -80,10 +80,13 @@ def make_dungeon(request):
     
     d = Dungeon(11,11)
     d.generate_dungeon()
-
-    # players=Player.objects.all()
-    # for p in players:
-    #     p.currentRoom=1
-    #     p.save()
     
     return JsonResponse({"rooms": list(Room.objects.values())})
+
+@api_view(['GET'])
+def set_players(request):
+    players=Player.objects.all()
+    for p in players:
+        p.currentRoom=121
+        p.save()
+    return JsonResponse({"Complete":"Complete"})
