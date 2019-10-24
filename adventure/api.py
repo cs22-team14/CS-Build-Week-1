@@ -84,7 +84,7 @@ def make_dungeon(request):
     d = Dungeon(11,11)
     d.generate_dungeon()
     
-    return JsonResponse({"rooms": list(Room.objects.values().order_by('_sort_index'))})
+    return JsonResponse({"rooms": list(Room.objects.values().order_by('id'))})
 
 @api_view(['GET'])
 def set_players(request):
