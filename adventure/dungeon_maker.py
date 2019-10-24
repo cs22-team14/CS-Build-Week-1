@@ -77,18 +77,33 @@ class Dungeon():
       axis = random.choice(['x', 'y'])
     value = random.choice(move_options[axis])
     return axis, value
+
+
+  def create_and_link_rooms(self, x, y, axis, value):
+    if axis == 'x':
+      x_val, y_val = value, 0
+    else:
+      x_val, y_val = 0, value
+
+    direction = self.get_direction(axis, value)
+    self.dungeon[y][x] = Room(title='Room', description='Another empty room')
+    self.dungeon[y][x].save()
+    self.dungeon[y][x].connectRooms(self.dungeon[y-y_val][x-x_val], direction)
+    direction = self.get_direction(axis, -value)
+    self.dungeon[y-y_val][x-x_val].connectRooms(self.dungeon[y][x], direction)
   
-  
+
   def generate_dungeon(self):
     self.tracker = self.make_grid()
     self.dungeon = self.make_grid()
 
-    cur_pos_x, cur_pos_y = 0,0
+    no_new_choice = dic = {'x': [], 'y': []}
+    cur_pos_x, cur_pos_y = 0, 0
     self.tracker[cur_pos_y][cur_pos_x] = 0
     
-    self.dungeon[cur_pos_y][cur_pos_x] = Room(title='Room', 
-                                              description='Another empty room')
-    no_new_choice = dic = {'x':[], 'y':[]}
+    self.dungeon[cur_pos_y][cur_pos_x] = Room(title='Room', description='The start of your journey.')
+    self.dungeon[cur_pos_y][cur_pos_x].save()
+    
     while self.contains_none():
       move_options = self.get_unvisited_options(cur_pos_x, cur_pos_y)
       if move_options == no_new_choice:
@@ -98,22 +113,10 @@ class Dungeon():
         count = self.tracker[cur_pos_y][cur_pos_x]
         if axis == 'x':
           cur_pos_x += value
-          direction = self.get_direction(axis, value)
-          self.dungeon[cur_pos_y][cur_pos_x] = Room(title='Room', 
-                                               description='Another empty room')
-          self.dungeon[cur_pos_y][cur_pos_x].save()
-          self.dungeon[cur_pos_y][cur_pos_x].connectRooms(
-                                       self.dungeon[cur_pos_y][cur_pos_x-value],
-                                       direction)
+          self.create_and_link_rooms(cur_pos_x, cur_pos_y, axis, value)
         else:
           cur_pos_y += value
-          direction = self.get_direction(axis, -value)
-          self.dungeon[cur_pos_y][cur_pos_x] = Room(title='Room', 
-                                               description='Another empty room')
-          self.dungeon[cur_pos_y][cur_pos_x].save()
-          self.dungeon[cur_pos_y][cur_pos_x].connectRooms(
-                                       self.dungeon[cur_pos_y-value][cur_pos_x],
-                                       direction)
+          self.create_and_link_rooms(cur_pos_x, cur_pos_y, axis, value)
         self.tracker[cur_pos_y][cur_pos_x] = count + 1
 
 

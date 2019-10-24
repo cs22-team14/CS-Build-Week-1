@@ -71,19 +71,19 @@ def say(request):
 def get_rooms(request):
     return JsonResponse({"rooms": list(Room.objects.values())})
 
-# @api_view(["GET"])
-# def make_dungeon(request):
-#     try:
-#         Room.objects.all().delete()
-#     except:
-#         pass
+@api_view(["GET"])
+def make_dungeon(request):
+    try:
+        Room.objects.all().delete()
+    except:
+        pass
     
-#     d = Dungeon(11,11)
-#     d.generate_dungeon()
+    d = Dungeon(11,11)
+    d.generate_dungeon()
 
-#     players=Player.objects.all()
-#     for p in players:
-#         p.currentRoom=1
-#         p.save()
+    # players=Player.objects.all()
+    # for p in players:
+    #     p.currentRoom=1
+    #     p.save()
     
-#     return JsonResponse({"rooms": list(Room.objects.values())})
+    return JsonResponse({"rooms": list(Room.objects.values())})
